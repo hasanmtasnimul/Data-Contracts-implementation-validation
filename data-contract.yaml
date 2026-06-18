@@ -1,0 +1,327 @@
+dataContractSpecification: 0.9.3
+
+id: Test Data contract
+info:
+  title: NYC Yellow Taxi Trip Records
+  version: 1.0.0
+  status: active
+  description: |
+    Data contract for the NYC Yellow Taxi Trip Records dataset for January 2015.
+    The dataset is produced by technology service providers (TPEP vendors) attached to
+    yellow taxicabs and contains trip-level records including pickup and dropoff times,
+    passenger counts, distances, geographic coordinates, fare components, and payment
+    information. This contract defines structural, semantic, and quality constraints
+    governing the dataset for research and analytical consumption.
+  owner: NYC Taxi and Limousine Commission (TLC)
+  contact:
+    name: Md Tasnimul Hasan
+    role: Thesis Author — Åbo Akademi University
+    email: md.hasan@abo.fi
+  tags:
+    - transportation
+    - taxi
+    - nyc
+    - 2015
+    - tpep
+    - geospatial
+# INFRASTRUCTURE
+servers:
+  valid:
+    type: local
+    path: ./nyc_taxi_data_1000.csv
+    format: csv
+    delimiter: ","
+    description: Original 1 000-row extract of the January 2015 NYC Yellow Taxi dataset
+  invalid:
+    type: local
+    path: ./nyc_taxi_data_1000_invalid.csv
+    format: csv
+    delimiter: ","
+    description: Synthetically corrupted dataset used to validate negative test cases
+# TERMS
+terms:
+  usage: |
+    This data isn't owned by the thesis author and the altered data isn't part of the real data. refer to the original data for any other usage.
+# SCHEMA / MODELS
+models:
+  nyc_taxi_trips:
+    description: One row per completed yellow-taxi trip recorded by a TPEP vendor
+    type: table
+    fields:
+
+      VendorID:
+        type: integer
+        description: >
+          Code identifying the TPEP technology provider.
+          1 = Creative Mobile Technologies, LLC; 2 = VeriFone Inc.
+        required: true
+        minimum: 1
+        maximum: 2
+        tags: [identifier, vendor]
+
+      tpep_pickup_datetime:
+        type: string
+        description: Date and time at which the taximeter was engaged (trip start). Format M/D/YYYY HH:MM.
+        required: true
+        tags: [temporal]
+
+      tpep_dropoff_datetime:
+        type: string
+        description: Date and time at which the taximeter was disengaged (trip end). Format M/D/YYYY HH:MM.
+        required: true
+        tags: [temporal]
+
+      passenger_count:
+        type: integer
+        description: Number of passengers in the vehicle as entered by the driver.
+        required: true
+        minimum: 0
+        maximum: 9
+        tags: [trip]
+      trip_distance:
+        type: double
+        description: Elapsed trip distance in miles as reported by the taximeter.
+        required: true
+        minimum: 0
+        tags: [trip]
+
+      pickup_longitude:
+        type: double
+        description: >
+          WGS84 longitude of the meter-engagement location.
+          Zero (0.0) indicates a missing GPS fix.
+        required: false
+        minimum: -180
+        maximum: 180
+        tags: [geospatial]
+
+      pickup_latitude:
+        type: double
+        description: >
+          WGS84 latitude of the meter-engagement location.
+          Zero (0.0) indicates a missing GPS fix.
+        required: false
+        minimum: -90
+        maximum: 90
+        tags: [geospatial]
+      RateCodeID:
+        type: integer
+        description: >
+          Final rate code in effect at the end of the trip.
+          1 = Standard rate; 2 = JFK; 3 = Newark; 4 = Nassau or Westchester;
+          5 = Negotiated fare; 6 = Group ride.
+        required: true
+        minimum: 1
+        maximum: 6
+        tags: [rate]
+      store_and_fwd_flag:
+        type: string
+        description: >
+          Indicates whether the trip record was held in vehicle memory before
+          transmission to the vendor (store-and-forward).
+          Y = store and forward trip; N = not a store-and-forward trip.
+        required: true
+        enum:
+          - "Y"
+          - "N"
+        tags: [operational]
+      dropoff_longitude:
+        type: double
+        description: >
+          WGS84 longitude of the meter-disengagement location.
+          Zero (0.0) indicates a missing GPS fix.
+        required: false
+        minimum: -180
+        maximum: 180
+        tags: [geospatial]
+      dropoff_latitude:
+        type: double
+        description: >
+          WGS84 latitude of the meter-disengagement location.
+          Zero (0.0) indicates a missing GPS fix.
+        required: false
+        minimum: -90
+        maximum: 90
+        tags: [geospatial]
+      payment_type:
+        type: integer
+        description: >
+          Numeric code for the passenger's payment method.
+          1 = Credit card; 2 = Cash; 3 = No charge; 4 = Dispute;
+          5 = Unknown; 6 = Voided trip.
+        required: true
+        minimum: 1
+        maximum: 6
+        tags: [payment]
+      fare_amount:
+        type: double
+        description: Time-and-distance fare calculated by the meter.
+        required: true
+        minimum: 0
+        tags: [fare]
+      extra:
+        type: double
+        description: >
+          Miscellaneous extras and surcharges. Currently includes
+          $0.50 rush-hour and $1 overnight surcharges.
+        required: true
+        minimum: 0
+        tags: [fare]
+      mta_tax:
+        type: double
+        description: >
+          $0.50 MTA tax automatically triggered based on the metered rate in use.
+          Valid values are 0.00 and 0.50.
+        required: true
+        minimum: 0
+        tags: [fare, tax]
+      tip_amount:
+        type: double
+        description: >
+          Tip amount automatically populated for credit-card payments.
+          Cash tips are not recorded here.
+        required: true
+        minimum: 0
+        tags: [fare]
+      tolls_amount:
+        type: double
+        description: Total toll charges incurred during the trip.
+        required: true
+        minimum: 0
+        tags: [fare]
+      improvement_surcharge:
+        type: double
+        description: >
+          $0.30 improvement surcharge assessed at flag drop.
+          Valid values are 0.00 and 0.30.
+        required: true
+        minimum: 0
+        tags: [fare, surcharge]
+      total_amount:
+        type: double
+        description: >
+          Total amount charged to the passenger, excluding cash tips.
+    Equals fare_amount + extra + mta_tax + tip_amount +tolls_amount+ improvement_surcharge.
+        required: true
+        minimum: 0
+        tags: [fare]
+
+# DATA QUALITY
+# SERVICE-LEVEL AGREEMENT
+servicelevels:
+  availability:
+    description: The dataset is available continuously via the local file system
+    percentage: "99.9%"
+  retention:
+    description: Raw trip records are retained for a minimum of 7 years
+    period: P7Y
+    unlimited: false
+  latency:
+    description: New monthly data is published within 30 days of month-end close
+    threshold: P30D
+  freshness:
+    description: >
+      This contract covers January 2015 records; data is static for this period.
+      For live feeds, pickup timestamps must be no older than 30 days.
+    threshold: "2015-02-01"
+    timestampField: nyc_taxi_trips.tpep_pickup_datetime
+  support:
+    description: Support available during business hours (09:00–17:00 ET, Mon–Fri)
+    time: "09:00 to 17:00 ET, Monday to Friday"
+    responseTime: 24h
+  backup:
+    description: Dataset is backed up daily; point-in-time recovery within 24 h
+    interval: daily
+    recoveryTime: 4h
+    recoveryPoint: 24h
+# TEAM  (custom section)
+team:
+  - name: Md Hasan
+    role: Thesis Author 
+    email: md.hasan@abo.fi
+    organization: Åbo Akademi University, Finland
+    responsibilities:
+      - Designed and authored this data contract
+      - Implemented validation and testing pipelines
+      - Owns the academic artefact for the master's thesis
+# ROLES  (custom section)
+roles:
+  - role: researcher
+    access: read
+    description: >
+      Full read access to all trip-level records for non-commercial
+      academic research. Coordinate data accessible under usage terms.
+    firstLevelApprovers: Data Owner 
+# BUSINESS RULES
+businessRules:
+  - name: ValidTripTimeOrder
+    description: >
+      The dropoff timestamp must be strictly after the pickup timestamp.
+      Trips where dropoff <= pickup indicate a data recording error.
+    rule: "tpep_dropoff_datetime > tpep_pickup_datetime"
+    severity: critical
+
+  - name: TotalAmountConsistency
+    description: >
+      total_amount must equal the arithmetic sum of fare_amount, extra,
+      mta_tax, tip_amount, tolls_amount, and improvement_surcharge
+      (within a tolerance of ±$0.01 for rounding).
+    rule: |
+      ABS(total_amount - (fare_amount + extra + mta_tax + tip_amount
+          + tolls_amount + improvement_surcharge)) <= 0.01
+    severity: high
+
+  - name: NewYorkGeographicBoundary
+    description: >
+      Non-zero coordinate pairs must fall within the NYC metropolitan
+      area bounding box (longitude −74.5 to −73.5; latitude 40.4 to 41.1).
+      Zero values (0.0, 0.0) are permitted and denote missing GPS fixes.
+    rule: |
+      (pickup_longitude = 0.0 AND pickup_latitude = 0.0)
+      OR (pickup_longitude BETWEEN -74.5 AND -73.5
+          AND pickup_latitude BETWEEN 40.4 AND 41.1)
+    severity: medium
+
+  - name: CashTipsAlwaysZero
+    description: >
+      For cash payments (payment_type = 2), tip_amount must be 0.00
+      because cash gratuities are not recorded by TPEP systems.
+    rule: "payment_type != 2 OR tip_amount = 0"
+    severity: medium
+
+  - name: NegotiatedFareRateCode
+    description: >
+      When RateCodeID = 5 (Negotiated fare), the fare_amount may deviate
+      from the standard time-and-distance calculation and requires
+      manual review before aggregation.
+    rule: "RateCodeID = 5 → flag_for_manual_review"
+    severity: low
+
+# CUSTOM PROPERTIES
+customProperties:
+  - key: sourceSystem
+    value: NYC TLC TPEP Raw Data Feed (Creative Mobile Technologies & VeriFone)
+  - key: dataClassification
+    value: Public — no PII contained in trip-level records
+  - key: regulatoryReference
+    value: NYC TLC Rules Title 35, Chapter 58 (Taxicab Driver Rules)
+  - key: dataLineage
+    value: >
+      TPEP Vendor Feed → NYC TLC Quality Processing →
+      Public Monthly Release → Academic Extract (1 000 rows)
+  - key: updateFrequency
+    value: Monthly (static extract for thesis purposes)
+  - key: geographicScope
+    value: New York City Metropolitan Area (five boroughs + airport zones)
+  - key: coordinateSystem
+    value: WGS84 (EPSG:4326)
+  - key: encodingFormat
+    value: UTF-8 CSV with comma delimiter and header row
+  - key: thesisContext
+    value: >
+      Master's thesis — "Data Contract: Implementation and Validation"
+      Åbo Akademi University, Finland, 2026
+  - key: contractTooling
+    value: datacontract-cli (https://cli.datacontract.com)
+  - key: contractSpecificationVersion
+    value: Data Contract Specification 0.9.3 (https://datacontract.com)
