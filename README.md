@@ -1,1 +1,1 @@
-"# Data-Contracts-implementation-validation" 
+# Data-Contracts-implementation-validation
